@@ -1,26 +1,33 @@
 #include "multitoonlib.h"
 #include <X11/X.h>
-#include <stdio.h>
+#include <stdlib.h>
+#include <xdo.h>
 
+typedef struct {
+        xdo_t *xdo;
+} linux_data_t;
 
-int main(void) {
-        printf("Starting Main\n");
-        mtlib_session_t *session = mtlib_init();
-        if (!session) {
-                fprintf(stderr, "Failed to initialize mt_lib\n");
-        }
+int main(int argc, char *argv[])
+{
+        char *key = "a";
 
-        printf("Click on xwayland window");
+        mtlib_session_t *x = mtlib_init();
+        linux_data_t *linux_data = (linux_data_t *)x->platform_data;
 
-        Window w = session->iset->select_window(session);
+        Window w = mtlib_select_window(x);
 
-        if (w == 0) {
-                printf("window select failed\n");
-        } else {
-                printf("window selected: 0x%lx\n", w);
-        }
+        mtlib_set_key_down(x, w, key);
 
-        mtlib_shutdown(session);
+        // Hold for a moment
+        sleep(1);
+
+        // Send key up
+        mtlib_set_key_up(x, w, key);
+
+        if (linux_data->xdo)
+                xdo_free(linux_data->xdo);
+        free(linux_data);
+        free(x);
 
         return 0;
 }
