@@ -2,6 +2,7 @@
 #include "minwindef.h"
 #include "synchapi.h"
 #include "windef.h"
+#include <libloaderapi.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -15,8 +16,8 @@ typedef struct {
 
 static mtlib_iset_t windows_iset;
 
-static HANDLE clickEvent = NULL;
-static HWND selectedWindow = NULL;
+static volatile HANDLE clickEvent = NULL;
+static volatile HWND selectedWindow = NULL;
 static HHOOK mouseHook = NULL;
 
 static WORD mtlib_normalize_key_windows(const char *key);
@@ -49,9 +50,6 @@ LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
                 selectedWindow = WindowFromPoint(pt);
 
                 SetEvent(clickEvent);
-
-                UnhookWindowsHookEx(mouseHook);
-                mouseHook = NULL;
         }
         return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
@@ -62,18 +60,34 @@ static uint64_t windows_select_window(mtlib_session_t *session)
         if (!clickEvent)
                 return 0;
 
-        mouseHook = SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, NULL, 0);
+        selectedWindow = NULL;
+
+        mouseHook = SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc,
+                                     GetModuleHandle(NULL), 0);
         if (!mouseHook) {
                 CloseHandle(clickEvent);
+                clickEvent = NULL;
                 return 0;
         }
 
-        WaitForSingleObject(clickEvent, INFINITE);
+        MSG msg;
+        while (WaitForSingleObject(clickEvent, 0) != WAIT_OBJECT_0) {
+                while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+                        TranslateMessage(&msg);
+                        DispatchMessage(&msg);
+                }
+                Sleep(10);
+        }
+
+        UnhookWindowsHookEx(mouseHook);
+        mouseHook = NULL;
+
+        HWND hwnd = selectedWindow;
 
         CloseHandle(clickEvent);
         clickEvent = NULL;
 
-        return (uint64_t)selectedWindow;
+        return (uint64_t)hwnd;
 }
 
 static void windows_set_key_down(mtlib_session_t *session, uint64_t w,
@@ -117,7 +131,7 @@ static void windows_send_key(mtlib_session_t *session, uint64_t w, char *key)
         PostMessage(hwnd, WM_KEYDOWN, vk, 0);
 
         // Reminder to myself this is in ms on windows
-        Sleep(30);
+        Sleep(15);
 
         PostMessage(hwnd, WM_KEYUP, vk, 0);
 }

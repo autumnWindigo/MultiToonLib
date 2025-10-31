@@ -1,3 +1,4 @@
+#include "mtlib_macos.h"
 #include <mtlib_linux.h>
 #include <mtlib_windows.h>
 #include <mtlib.h>
@@ -15,7 +16,7 @@ mtlib_session_t *mtlib_init(void)
 #elif defined(_WIN32)
         return mtlib_windows_get_iset()->init();
 #elif defined(__APPLE__)
-        return mac_iset.init();
+        return mtlib_macos_get_iset()->init();
 #else
         return NULL;
 #endif

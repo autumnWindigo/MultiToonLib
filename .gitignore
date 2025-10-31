@@ -1,6 +1,4 @@
 build
-compile_commands.json
-compile_commands.json.linux
-compile_commands.json.windows
+compile_commands.json*
 .cache
 .clang-format
