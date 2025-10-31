@@ -4,7 +4,10 @@
 #include <CoreFoundation/CFBase.h>
 #include <CoreFoundation/CFCGTypes.h>
 #include <CoreFoundation/CFDictionary.h>
+#include <CoreFoundation/CFMachPort.h>
 #include <CoreFoundation/CFNumber.h>
+#include <CoreFoundation/CFRunLoop.h>
+#include <CoreGraphics/CGDirectDisplay.h>
 #include <CoreGraphics/CGEvent.h>
 #include <CoreGraphics/CGEventSource.h>
 #include <CoreGraphics/CGEventTypes.h>
@@ -29,6 +32,10 @@ typedef struct {
 
 static mtlib_iset_t macos_iset;
 static CGKeyCode panda_to_macos_key(const char *key);
+static volatile bool mouseClicked = false;
+CGPoint click_location = {0, 0};
+
+static pid_t get_foremost_window_pid(void);
 
 static mtlib_session_t *macos_init(void)
 {
@@ -86,30 +93,85 @@ static void macos_set_key_up(mtlib_session_t *session, uint64_t pid, char *key)
         CGEventRef key_up =
             CGEventCreateKeyboardEvent(mdata->source, vK, false);
         CGEventPostToPid((pid_t)pid, key_up);
+        }
+
+CGEventRef left_click_callback(CGEventTapProxy proxy, CGEventType type,
+                               CGEventRef event, void *refcon)
+{
+        if (type != kCGEventLeftMouseDown) {
+                return event;
+        }
+        click_location = CGEventGetLocation(event);
+        mouseClicked = true;
+        return event;
 }
 
-static uint64_t macos_select_window(mtlib_session_t *session) {
+static uint64_t macos_select_window(mtlib_session_t *session)
+{
         macos_data_t *mdata = (macos_data_t *)session->platform_data;
 
+        CFMachPortRef event_tap = CGEventTapCreate(
+            kCGSessionEventTap, kCGHeadInsertEventTap, kCGEventTapOptionDefault,
+            (1 << kCGEventLeftMouseDown), left_click_callback, NULL);
+
+        if (!event_tap)
+                return 0;
+
+        CFRunLoopSourceRef loop_src =
+            CFMachPortCreateRunLoopSource(kCFAllocatorDefault, event_tap, 0);
+        CFRunLoopAddSource(CFRunLoopGetCurrent(), loop_src,
+                           kCFRunLoopCommonModes);
+
+        CGEventTapEnable(event_tap, true);
+
+        while (!mouseClicked) {
+                CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0.1, true);
+        }
+
+        CFRunLoopRemoveSource(CFRunLoopGetCurrent(), loop_src,
+                              kCFRunLoopCommonModes);
+        CFRelease(loop_src);
+        CFRelease(event_tap);
+
+        pid_t pid = get_foremost_window_pid();
+
+        return (uint64_t)pid;
 }
 
+static pid_t get_pid_from_CGPoint(CGPoint *p) {
+        CFArrayRef window_list = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+        if (!window_list)
+                return 0;
+        pid_t pid = 0;
+
+        for (CFIndex i = 0; i < CFArrayGetCount(window_list); i++) {
+
+        }
+
+        CFRelease(window_list);
+        return pid;
+}
 
 static pid_t get_foremost_window_pid(void)
 {
         CFArrayRef window_list = CGWindowListCopyWindowInfo(
             kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
         if (!window_list)
-                return -1;
-        pid_t pid = -1;
+                return 0;
+        pid_t pid = 0;
 
-        for (CFIndex i = 0; i < CFArrayGetCount(window_list); i++){
-                CFDictionaryRef window_info = CFArrayGetValueAtIndex(window_list, i);
-                CFNumberRef is_window_on_top = CFDictionaryGetValue(window_info, kCGWindowLayer);
+        for (CFIndex i = 0; i < CFArrayGetCount(window_list); i++) {
+                CFDictionaryRef window_info =
+                    CFArrayGetValueAtIndex(window_list, i);
+                CFNumberRef is_window_on_top =
+                    CFDictionaryGetValue(window_info, kCGWindowLayer);
 
-                if(is_window_on_top) {
-                        CFNumberRef pid_temp = CFDictionaryGetValue(window_info, kCGWindowOwnerPID);
+                if (is_window_on_top) {
+                        CFNumberRef pid_temp = CFDictionaryGetValue(
+                            window_info, kCGWindowOwnerPID);
                         if (pid_temp) {
-                                CFNumberGetValue(pid_temp, kCFNumberSInt32Type, &pid);
+                                CFNumberGetValue(pid_temp, kCFNumberSInt32Type,
+                                                 &pid);
                                 break;
                         }
                 }
@@ -117,15 +179,6 @@ static pid_t get_foremost_window_pid(void)
 
         CFRelease(window_list);
         return pid;
-}
-
-static pid_t get_pid_from_window_click(CGEventType type, CGEventRef event) {
-        if (type == kCGEventLeftMouseDown) {
-                usleep(1000);
-                return get_foremost_window_pid();
-
-        }
-        return -1;
 }
 
 static mtlib_iset_t macos_iset = {
