@@ -1,8 +1,10 @@
 #include <X11/X.h>
 #include <X11/Xlib.h>
-#include <multitoonlib.h>
-#include <stdio.h>
+#include <mtlib.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
 #include <xdo.h>
 
 typedef struct {
@@ -46,28 +48,28 @@ static Window linux_select_window(mtlib_session_t *session)
         return w;
 }
 
-static void linux_set_key_down(mtlib_session_t *session, Window w, char *key)
+static void linux_set_key_down(mtlib_session_t *session, uint64_t w, char *key)
 {
         if (!session)
                 return;
         linux_data_t *ldata = (linux_data_t *)session->platform_data;
-        int ret = xdo_send_keysequence_window_down(ldata->xdo, w, key, 0);
+        xdo_send_keysequence_window_down(ldata->xdo, (Window)w, key, 0);
 }
 
-static void linux_set_key_up(mtlib_session_t *session, Window w, char *key)
+static void linux_set_key_up(mtlib_session_t *session, uint64_t w, char *key)
 {
         if (!session)
                 return;
         linux_data_t *ldata = (linux_data_t *)session->platform_data;
-        int ret = xdo_send_keysequence_window_up(ldata->xdo, w, key, 0);
+        xdo_send_keysequence_window_up(ldata->xdo, (Window)w, key, 0);
 }
 
-static void linux_send_key(mtlib_session_t *session, Window w, char *key)
+static void linux_send_key(mtlib_session_t *session, uint64_t w, char *key)
 {
         if (!session)
                 return;
         linux_data_t *ldata = (linux_data_t *)session->platform_data;
-        int ret = xdo_send_keysequence_window(ldata->xdo, w, key, 0);
+        xdo_send_keysequence_window(ldata->xdo, (Window)w, key, 0);
 }
 
 static mtlib_iset_t linux_iset = {
@@ -80,4 +82,17 @@ static mtlib_iset_t linux_iset = {
 };
 
 mtlib_iset_t *mtlib_linux_get_iset(void) { return &linux_iset; }
+
+const char *mtlib_normalize_key_linux(const char *key)
+{
+        if (strcmp(key, "arrow_up") == 0)
+                return "Up";
+        if (strcmp(key, "arrow_down") == 0)
+                return "Down";
+        if (strcmp(key, "arrow_left") == 0)
+                return "Left";
+        if (strcmp(key, "arrow_right") == 0)
+                return "Right";
+        return "";
+}
 

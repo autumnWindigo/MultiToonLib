@@ -1,4 +1,4 @@
-#include "multitoonlib.h"
+#include "mtlib.h"
 #include <X11/X.h>
 #include <stdlib.h>
 #include <xdo.h>
