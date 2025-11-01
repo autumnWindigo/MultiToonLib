@@ -11,12 +11,12 @@ extern mtlib_iset_t mac_iset;
 
 mtlib_session_t *mtlib_init(void)
 {
-#if defined(__linux__)
-        return mtlib_linux_get_iset()->init();
-#elif defined(_WIN32)
+#if defined(_WIN32)
         return mtlib_windows_get_iset()->init();
 #elif defined(__APPLE__)
         return mtlib_macos_get_iset()->init();
+#elif defined(__linux__)
+        return mtlib_linux_get_iset()->init();
 #else
         return NULL;
 #endif

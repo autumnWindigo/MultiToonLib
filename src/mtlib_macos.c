@@ -189,7 +189,7 @@ static mtlib_iset_t macos_iset = {
     .send_key = macos_send_key,
 };
 
-mtlib_iset_t *mtlib_linux_get_iset(void) { return &macos_iset; }
+mtlib_iset_t *mtlib_macos_get_iset(void) { return &macos_iset; }
 
 static PandaToMacKey panda_to_mac_key_map[] = {
     {"arrow_up", kVK_UpArrow},
