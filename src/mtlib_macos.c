@@ -184,6 +184,7 @@ static pid_t get_foremost_window_pid(void)
 static mtlib_iset_t macos_iset = {
     .init = macos_init,
     .shutdown = macos_shutdown,
+    .select_window = macos_select_window,
     .set_key_down = macos_set_key_down,
     .set_key_up = macos_set_key_up,
     .send_key = macos_send_key,
