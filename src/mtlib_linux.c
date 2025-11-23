@@ -53,6 +53,7 @@ static void linux_set_key_down(mtlib_session_t *session, uint64_t w, char *key)
         if (!session)
                 return;
         linux_data_t *ldata = (linux_data_t *)session->platform_data;
+		XSetInputFocus(ldata->xdo->xdpy, (Window)w, 0, CurrentTime);
         xdo_send_keysequence_window_down(ldata->xdo, (Window)w, key, 0);
 }
 
@@ -61,6 +62,7 @@ static void linux_set_key_up(mtlib_session_t *session, uint64_t w, char *key)
         if (!session)
                 return;
         linux_data_t *ldata = (linux_data_t *)session->platform_data;
+		XSetInputFocus(ldata->xdo->xdpy, (Window)w, 0, CurrentTime);
         xdo_send_keysequence_window_up(ldata->xdo, (Window)w, key, 0);
 }
 
@@ -69,6 +71,7 @@ static void linux_send_key(mtlib_session_t *session, uint64_t w, char *key)
         if (!session)
                 return;
         linux_data_t *ldata = (linux_data_t *)session->platform_data;
+		XSetInputFocus(ldata->xdo->xdpy, (Window)w, 0, CurrentTime);
         xdo_send_keysequence_window(ldata->xdo, (Window)w, key, 0);
 }
 
