@@ -1,6 +1,7 @@
 #ifndef MTLIB_H
 #define MTLIB_H
 
+#include <X11/X.h>
 #include <stdint.h>
 #include <sys/types.h>
 typedef uint64_t mt_window_t;
@@ -15,6 +16,7 @@ struct mtlib_iset {
         void (*set_key_down)(mtlib_session_t *, uint64_t w, char *key);
         void (*set_key_up)(mtlib_session_t *, uint64_t w, char *key);
         void (*send_key)(mtlib_session_t *, uint64_t w, char *key);
+		uint64_t (*get_window_from_pid)(mtlib_session_t *session, int pid);
 };
 
 struct mtlib_session {
@@ -28,6 +30,8 @@ uint64_t mtlib_select_window(mtlib_session_t *session);
 void mtlib_set_key_down(mtlib_session_t *session, uint64_t w, char *key);
 void mtlib_set_key_up(mtlib_session_t *session, uint64_t w, char *key);
 void mtlib_send_key(mtlib_session_t *session, uint64_t w, char *key);
+uint64_t mtlib_get_window_from_pid(mtlib_session_t *session, int pid);
 
 const char *mtlib_normalize_key(const char *key);
 #endif
+

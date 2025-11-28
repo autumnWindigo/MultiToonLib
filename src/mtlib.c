@@ -1,4 +1,5 @@
 #include "mtlib_macos.h"
+#include <X11/X.h>
 #include <mtlib_linux.h>
 #include <mtlib_windows.h>
 #include <mtlib.h>
@@ -51,5 +52,11 @@ void mtlib_send_key(mtlib_session_t *session, uint64_t w, char *key)
 {
         if (session && session->iset && session->iset->send_key)
                 session->iset->send_key(session, w, key);
+}
+
+uint64_t mtlib_get_window_from_pid(mtlib_session_t *session, int pid) {
+        if (session && session->iset && session->iset->get_window_from_pid)
+				return session->iset->get_window_from_pid(session, pid);
+		return -1;
 }
 

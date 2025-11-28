@@ -96,3 +96,7 @@ install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/
         FILES_MATCHING PATTERN "*.h"
 )
 endif()
+
+add_executable(mt_test ${CMAKE_SOURCE_DIR}/src/main.c)
+target_link_libraries(mt_test PRIVATE mtlib xdo X11)
+

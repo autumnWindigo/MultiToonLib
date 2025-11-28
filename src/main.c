@@ -1,5 +1,6 @@
 #include "mtlib.h"
 #include <X11/X.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <xdo.h>
 
@@ -14,15 +15,9 @@ int main(int argc, char *argv[])
         mtlib_session_t *x = mtlib_init();
         linux_data_t *linux_data = (linux_data_t *)x->platform_data;
 
-        Window w = mtlib_select_window(x);
+		Window w = mtlib_get_window_from_pid(x, 5940);
 
-        mtlib_set_key_down(x, w, key);
-
-        // Hold for a moment
-        sleep(1);
-
-        // Send key up
-        mtlib_set_key_up(x, w, key);
+		printf("window: %lu", w);
 
         if (linux_data->xdo)
                 xdo_free(linux_data->xdo);
